@@ -1,0 +1,32 @@
+
+# folders :
+.vscode/
+__pycache__/
+mlruns/
+_Artifacts/*
+!_Artifacts/readme.md
+catboost_info/
+
+
+# specific files :
+scpScript.py
+scpDataset.py
+scpBack.py
+test.py
+
+# dataset
+A_Dataset/*
+!A_Dataset/readme.md
+
+_gen_geos_dataset/*
+!_gen_geos_dataset/*.py
+
+_gen_merra2_dataset/*
+!_gen_merra2_dataset/*.py
+
+scp_back
+
+./fix_icao.py
+
+
+*.zip
