@@ -6,10 +6,11 @@ import os
 import numpy as np
 
 
-MERRA_FOLDER = "./merra2-04-2020-07-2020/"
+MERRA_FOLDER = "./merra2_04-2023_10-2023/"
 POWER_FILE = "./power_cet/power-04-2023_09-2023.xlsx"
 # AS GEOS is UTC+0.5, you can choose to aline the power with UTC+0 or UTC+1
 SHIFT_POWER = 0
+BEFORE = "20230901:00"
 
 
 # Geopoint 01 : 54.00, 23.1250
@@ -48,6 +49,7 @@ for file in files:
     lons = data.variables['lon'][:]
     lats = data.variables['lat'][:]
     time = data.variables['time'][:]
+    
 
     lats_index = []
     for i in GEOPOINTS:
@@ -57,7 +59,10 @@ for file in files:
     for i in GEOPOINTS:
         lons_index.append((abs(lons - i[1])).argmin())
 
-    begin_date = file.split(".")[2]
+    if (file.startswith("MERRA2_400.tavg1_2d_slv_Nx.")):
+        begin_date = file.split(".")[2]
+    else:
+        begin_date = file.split(".")[5]
     begin_date = datetime.strptime(begin_date, '%Y%m%d')
 
 
@@ -156,6 +161,9 @@ else:
     deriv_df["Power [kW]"] = np.nan
     
     
+# apply BEFORE filter
+i_loc = deriv_df[deriv_df['Date'] == BEFORE].index[0]
+deriv_df = deriv_df.iloc[:i_loc]
 
 # YYYYMMDD:HH to date
 start = datetime.strptime(deriv_df['Date'][0]              , '%Y%m%d:%H').strftime('%m-%Y')
@@ -172,7 +180,7 @@ cols = cols[:1] + cols[-1:] + cols[1:-1]
 deriv_df = deriv_df[cols]
 
 # save to csv
-FILENAME = f'geos-{start}_{end}_s{SHIFT_POWER}.csv'
+FILENAME = f'merra-{start}_{end}_s{SHIFT_POWER}.csv'
 deriv_df.to_csv(FILENAME, index=False, sep=';')
 
 # cp to "../A_Dataset/EnergyPrediction/Dataset 202304_202306_cleaned_geos.csv"

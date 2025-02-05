@@ -1,0 +1,12 @@
+pip install pandas
+pip install numpy_typing
+pip install scikit-learn
+
+pip install matplotlib
+pip install pydot
+
+pip install tensorflow
+pip install keras
+pip install torch
+pip install reformer_pytorch
+

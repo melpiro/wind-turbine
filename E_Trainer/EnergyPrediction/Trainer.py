@@ -27,17 +27,20 @@ from E_Trainer.AbstractTrainer import Trainer as AbstractTrainer
 
 ARTIFACTS = "./_Artifacts/"
 
-# TRAIN = "./A_Dataset/EnergyPrediction/Dataset 201409_202007_cleaned_merra_utc.csv"
+# TRAIN = "./A_Dataset/EnergyPrediction/merra_2014_2020_s0.csv"
+# TRAIN = "./A_Dataset/EnergyPrediction/merra-04-2023_08-2023_s0.csv"
 TRAIN = "./A_Dataset/EnergyPrediction/geos-04-2023_08-2023_s0.csv"
 
-EVAL = "./A_Dataset/EnergyPrediction/eval_geos_09-2023_09-2023_s0/"
-# EVAL = "./A_Dataset/EnergyPrediction/Eval_full/"
+# EVAL = "./A_Dataset/EnergyPrediction/eval_geos_04-2023_09-2023_s0/"
+# EVAL = "./A_Dataset/EnergyPrediction/eval_geos_09-2023_09-2023_s0/"
+EVAL = "./A_Dataset/EnergyPrediction/eval_geos_24h_09-2023_09-2023/"
 
 
 H_TRAIN_LOSS = 0
 H_TEST_LOSS  = 1
 H_TRAIN_RMSE = 2
 H_TEST_RMSE  = 3
+
 H_TRAIN_MAE  = 4
 H_TEST_MAE   = 5
 
@@ -52,10 +55,7 @@ RMSE_LEVEL = [24, 48, 72, 1000]
 # |====================================================================================================================
 
 BAR = ProgressBar()
-if ("geos" in TRAIN.lower()):
-    RUN_LOGGER = RunLogger("./_Artifacts/logs_geos.pkl")
-else:
-    RUN_LOGGER = RunLogger("./_Artifacts/logs_merra.pkl")
+RUN_LOGGER = RunLogger("./_Artifacts/logs.pkl")
 CHRONO = Chrono()
 
 
@@ -453,25 +453,73 @@ class Trainer(AbstractTrainer):
             print(f"\t{m.upper()} :")
             for l, level in enumerate(RMSE_LEVEL):
                 if (level == 1000):
-                    print(f"\t - {m.upper()} fcst : {np.mean(metrics[:, l, i]):.2f}")
-                    logs[f"{m.upper()}"] = round(np.mean(metrics[:, l, i]), 1)
+                    print(f"\t - {m.upper()}_FULL fcst : {np.mean(metrics[:, l, i]):.2f}")
+                    logs[f"{m.upper()}_FULL"] = round(np.mean(metrics[:, l, i]), 1)
                 else:
                     print(f"\t - {m.upper()} {level}H fcst : {np.mean(metrics[:, l, i]):.2f}")
                     logs[f"{m.upper()}_{level}"] = round(np.mean(metrics[:, l, i]), 1)
+                    
+        logs["TRAIN"] = TRAIN.split("/")[-1].split(".")[0]
+        logs["EVAL"] = EVAL.split("/")[-2]
         
 
         if (self.CTX["EPOCHS"] > 0):
-            RUN_LOGGER.add_run(logs)
-            file = ""
-            if ("geos" in TRAIN.lower()):
-               file = ARTIFACTS+"logs_geos.txt"
-            else:
-                file = ARTIFACTS+"logs_merra.txt"
-                
-            file = open(file, "w")
-            RUN_LOGGER.get_best_run_per_model("RMSE_24", maximize=False).render(file, title="Best runs per model")
-            RUN_LOGGER.render(file, title="List of runs")
+            H = "HYPERPARAMETERS"
+            groups = {
+                "LEARNING_RATE":H,
+                "EPOCHS":H,
+                "BATCH_SIZE":H,
+                "NB_BATCH":H,
+                "HISTORY":H,
+                "LOOK_AHEAD":H,
+                "FEATURES_IN":H,
+                "DROPOUT":H,
+                "TRAIN":"DATASET",
+                "EVAL":"DATASET",
+            }
+            dtypes = {
+                "DATASET":str,
+            }
+            for i in METRICS_FUNC:
+                for l in RMSE_LEVEL:
+                    if (l == 1000):
+                        groups[f"{i.upper()}_FULL"] = i.upper()
+                    else:
+                        groups[f"{i.upper()}_{l}"] = i.upper()
+                        
+                        
+            # for each variable in CTX
+            exept = ["MAX_BATCH_SIZE", "TEST_RATIO", "INPUT_LEN", "OUTPUT_LEN"]
+            for k in self.CTX:
+                if (k in exept):
+                    continue
+                # if the variable is numeric
+                if (isinstance(self.CTX[k], (int, float))):
+                    # if the variable is not in the groups
+                    if (k not in groups):
+                        groups[k] = "SPECIFIC HYPERPARAMETERS"
+                    else:
+                        groups[k] = H
+                        
+                    logs[k] = self.CTX[k]
+                        
+            RUN_LOGGER.add_run(logs, groups, dtypes)
+            
+            file = open(ARTIFACTS+"log.txt", "w")
+            
+            loggers_ = RUN_LOGGER.split_by("EVAL")
+            loggers = []
+            for i in range(len(loggers_)):
+                loggers.extend(loggers_[i].split_by("TRAIN"))
+            for i in range(len(loggers)):
+                loggers[i].get_best_groupes_by("RMSE_24", "model", maximize=False)
+            logger:RunLogger = RunLogger.join(loggers).group_by("TRAIN").group_by("EVAL")
+            logger.render(file, "Best models by dataset")
+            file.write("\n\n")
+            RUN_LOGGER.render(file, "All runs")
             file.close()
+            
+            
             
         return logs
         

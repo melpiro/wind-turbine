@@ -28,15 +28,17 @@ class Model(AbstactModel):
         x = tf.keras.Input(shape=x_input_shape, name='input')
         z = x
         
-        n = self.CTX["LAYERS"]
-        z = Conv1DModule(64)(z)
-        z = Conv1DModule(32)(z)
-        z = Flatten()(z)
+        for i in range(self.CTX["CNN_LAYERS"]):
+            z = Conv1DModule(self.CTX["CNN_UNITS"])(z)
+            
+        if (self.CTX["SLIDING_WINDOW"]):
+            z = Flatten()(z)
+            z = Dense(CTX["OUTPUT_LEN"], activation="linear")(z)
+        else:
+            z = Lambda(lambda x: x[:, -self.CTX["LOOK_AHEAD"]:,:])(z)
+            z = Conv1D(1, 1, activation="linear")(z)
+            z = Reshape((self.CTX["OUTPUT_LEN"],))(z)
         
-        n = self.CTX["DENSE_LAYERS"]
-        for i in range(n):
-            z = DenseModule(self.CTX["DENSE_UNITS"], self.dropout)(z)
-        z = Dense(CTX["OUTPUT_LEN"], activation="linear")(z)
         y = z
         self.model = tf.keras.Model(x, y)
 

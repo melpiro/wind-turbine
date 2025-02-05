@@ -14,12 +14,10 @@ OUTPUT_LEN = LOOK_AHEAD
 INPUT_LEN = HISTORY + LOOK_AHEAD
 
 
-LAYERS = 2
-UNITS = 64
+CNN_LAYERS = 2
+CNN_UNITS = 64
 DROPOUT = 0.3
 
-DENSE_LAYERS = 1
-DENSE_UNITS = 64
 
 
 # |====================================================================================================================
