@@ -14,10 +14,10 @@ POWER_FILE = "./power_cet/power-04-2023_09-2023.xlsx"
 
 
 SHIFT_POWER = 0
-BEFORE = "20230414:22"
+BEFORE = "20230401:22"
 
 
-df = load_global_geos(GEOS_FOLDER, start="20230412:12", end=BEFORE, shift=SHIFT_POWER)
+df = load_global_geos(GEOS_FOLDER, start=None, end=BEFORE, shift=SHIFT_POWER)
 power = load_power(POWER_FILE, start=None, end=BEFORE, shift=SHIFT_POWER)
 
 # target:
