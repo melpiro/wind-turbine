@@ -9,13 +9,15 @@ from utils import load_power, load_global_geos, filter_features, gen_deriv_df
 
 
 GEOS_FOLDER = "./geos_forecasts_utc/"
+# POWER_FILE = "./power_cet/power-04-2023_09-2023.xlsx"
 POWER_FILE = "./power_cet/power-04-2023_09-2023.xlsx"
 
 
 SHIFT_POWER = 0
-BEFORE = "20230901:00"
+BEFORE = "20230414:22"
 
-df = load_global_geos(GEOS_FOLDER, start=None, end=BEFORE, shift=SHIFT_POWER)
+
+df = load_global_geos(GEOS_FOLDER, start="20230412:12", end=BEFORE, shift=SHIFT_POWER)
 power = load_power(POWER_FILE, start=None, end=BEFORE, shift=SHIFT_POWER)
 
 # target:

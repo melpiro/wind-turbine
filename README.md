@@ -19,12 +19,15 @@ Prepare the data:
 - Enter the folder `_gen_geos_dataset/`. 
 - Put the raw geos forecasts in the folder `geos_forecasts_utc/`.
 - Put wind turbine power output data in the folder `power_cet/`.
+    - power files should be .xslx files with three columns: **Date**, **Time** and **Power [kW]**.
+    - The **Date** column should be in the format `DD.MM.YYYY`.
+    - The **Time** column should be in the format `HH:MM` (CET timezone).
 
 ### 1.1. Generate training dataset
 
 - Open the file `gen_geos_train.py` 
 - Set the parameter `POWER_FILE` to `power_cet/[power_file].csv`
-- Set the parameter `BEFORE` the last date of the training dataset __excluded__ (e.g. 20241101:00 to stop at the end of 10/2024)
+- Set the parameter `BEFORE`, the last date of the training dataset __excluded__ (e.g. 20241101:00 to stop at the end of 10/2024)
 - Run the script with 
 ```bash 
 python gen_geos_train.py
@@ -35,7 +38,7 @@ python gen_geos_train.py
 
 - Open the file `gen_geos_eval.py`
 - Set the parameter `POWER_FILE` to `power_cet/[power_file].csv`
-- Set the parameter `AFTER` the first date of the training dataset __included__ (e.g. 20241101:00 to start at the beginning of 11/2024)
+- Set the parameter `AFTER`, the first date of the training dataset __included__ (e.g. 20241101:00 to start at the beginning of 11/2024)
 - Run the script with 
 ```bash
 python gen_geos_eval.py

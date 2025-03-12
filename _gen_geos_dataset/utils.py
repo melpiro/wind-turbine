@@ -60,6 +60,7 @@ def load_global_geos(folder, start=None, end=None, shift:int=0):
         df = __load_geos__(folder+file, start, end, shift)
         if (len(df) > 0):
             dfs.append(df)
+    
 
     # Sort and crop data
     dfs = sorted(dfs, key=lambda x: x['Date'][0])
@@ -87,6 +88,15 @@ def load_global_geos(folder, start=None, end=None, shift:int=0):
             pad["Date"] = dates
             
             dfs[i] = pd.concat([dfs[i], pad])
+    
+    if (len(dfs) == 0):
+        if (start.year == 1800):
+            raise Exception("No geos data found before : "+ end.strftime('%Y-%m-%d %H:%M'))
+        elif (end.year == 9999):
+            raise Exception("No geos data found after : "+ start.strftime('%Y-%m-%d %H:%M'))
+        else:
+            raise Exception("No geos data found between : "+ start.strftime('%Y-%m-%d %H:%M')+ " and "+ end.strftime('%Y-%m-%d %H:%M'))
+
 
 
 # |--------------------------------------------------------------------------------------------------------------------
@@ -102,8 +112,9 @@ def load_global_geos(folder, start=None, end=None, shift:int=0):
         global_df = pd.concat([global_df, df])
         global_df = global_df.reset_index(drop=True)
         
-    # remove Date >= end
-    global_df = global_df[global_df['Date'] < end]
+    # keep data between start and end
+    # global_df = global_df[(start <= global_df['Date']) & (global_df['Date'] < end)]
+    global_df = global_df[(global_df['Date'] >= start) & (global_df['Date'] < end)]
 
     # # date is in format YYYYMMDD:HH
     # convert to datetime
@@ -173,10 +184,8 @@ def load_geos(file:str, start:str, end:str, shift:int=0) -> pd.DataFrame:
 
 def __load_geos__(file, start:datetime, end:datetime, shift:int=0) -> pd.DataFrame:
     
-    date = datetime.strptime(file.split("/")[-1].split("_")[0], '%Y-%m-%d')
-    if (date >= end):
-        return pd.DataFrame([])
-    if (date < start - pd.Timedelta(days=10)):
+    df_start_date = datetime.strptime(file.split("/")[-1].split("_")[0], '%Y-%m-%d')
+    if (df_start_date >= end):
         return pd.DataFrame([])
     
     df = pd.read_csv(file)
@@ -184,9 +193,7 @@ def __load_geos__(file, start:datetime, end:datetime, shift:int=0) -> pd.DataFra
     
     df['Date'] = df["Date"] + pd.Timedelta(hours=shift)
     
-    if (df['Date'][0] < start):
-        return pd.DataFrame([])
-    if (df['Date'][len(df)-1] >= end):
+    if (df['Date'][len(df)-1] < start):
         return pd.DataFrame([])
     
     df = fix_geopoint_issue(df)
