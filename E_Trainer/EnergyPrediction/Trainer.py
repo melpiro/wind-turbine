@@ -25,15 +25,29 @@ from E_Trainer.AbstractTrainer import Trainer as AbstractTrainer
 # | CONSTANTS
 # |====================================================================================================================
 
+# Metrics :
+#         RMSE :
+#          - RMSE 24H fcst : 71.76
+#          - RMSE 48H fcst : 75.73
+#          - RMSE 72H fcst : 79.78
+#          - RMSE_FULL fcst : 117.19
+#         MAE :
+#          - MAE 24H fcst : 58.37
+#          - MAE 48H fcst : 60.31
+#          - MAE 72H fcst : 62.33
+#          - MAE_FULL fcst : 86.79
+
 ARTIFACTS = "./_Artifacts/"
 
 # TRAIN = "./A_Dataset/EnergyPrediction/merra_2014_2020_s0.csv"
-# TRAIN = "./A_Dataset/EnergyPrediction/merra-04-2023_08-2023_s0.csv"
-TRAIN = "./A_Dataset/EnergyPrediction/geos-04-2023_08-2023_s0.csv"
+TRAIN = "./A_Dataset/EnergyPrediction/predicted_merra_2014_2020_s0.csv"
 
-# EVAL = "./A_Dataset/EnergyPrediction/eval_geos_04-2023_09-2023_s0/"
+# TRAIN = "./A_Dataset/EnergyPrediction/merra-04-2023_08-2023_s0.csv"
+# TRAIN = "./A_Dataset/EnergyPrediction/geos-04-2023_08-2023_s0.csv"
+
+EVAL = "./A_Dataset/EnergyPrediction/eval_geos_04-2023_09-2023_s0/"
 # EVAL = "./A_Dataset/EnergyPrediction/eval_geos_09-2023_09-2023_s0/"
-EVAL = "./A_Dataset/EnergyPrediction/eval_geos_24h_09-2023_09-2023/"
+# EVAL = "./A_Dataset/EnergyPrediction/eval_geos_24h_09-2023_09-2023/"
 
 
 H_TRAIN_LOSS = 0
@@ -340,6 +354,26 @@ class Trainer(AbstractTrainer):
         pdf.close()
 
         return self.__log_metrics__(metrics)
+    
+    def predict(self, file) -> np.float32_2d[ax.time, ax.feature]:
+        x, _, df, start_i = self.dl.genEval(file)
+        print(x.shape, len(df))
+        y_ = self.model.predict(x[0])
+        y_ = self.dl.yScaler.inverse_transform(y_)
+        y_[y_ < 0] = 0
+        # df.iloc[start_i:, df.columns.get_loc("E53 Power [kW]")] = np.round(y_[:, 0], 2)
+        
+        for t in range(start_i, len(df)):
+            # if Power is empty or 0 remplace it with prediction
+            if (pd.isna(df.at[t, "E53 Power [kW]"]) or df.at[t, "E53 Power [kW]"] == 0):
+                df.at[t, "E53 Power [kW]"] = y_[t - start_i, 0]
+                
+        # round to 2 decimals
+        df["E53 Power [kW]"] = df["E53 Power [kW]"].round(2)
+        
+        file_name = file.split("/")[-1]
+        df.to_csv(self.ARTIFACTS+"/predicted_"+file_name, index=False)
+        return y_
     
         
         

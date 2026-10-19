@@ -2,7 +2,7 @@ import sys
 #############################
 # Choose your model here    #
 #############################
-model = "CatBoost"
+model = "CNN"
 #############################
 
 # if args[1] => model = args[1]
